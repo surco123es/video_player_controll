@@ -1,0 +1,26 @@
+name: video_player_controll
+description: "A new Flutter plugin project."
+version: 0.0.1
+homepage:
+
+environment:
+  sdk: ^3.5.3
+  flutter: '>=3.3.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  media_kit: 1.1.11
+  kit_video_media: 
+    path: ../kit_video_media/
+  loading_animation:
+    path: ../loading_animation/
+  media_kit_libs_video: 1.0.5
+
+  screen_brightness: ^2.0.1
+  wakelock_plus: 1.2.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
