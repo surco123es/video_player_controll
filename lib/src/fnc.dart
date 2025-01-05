@@ -80,3 +80,4 @@ class FuncPlayerManager {
 
 FuncPlayerManager pFunc = FuncPlayerManager();
 PlayerControll videoPlayerControll = PlayerControll();
+ManagerController managerPlayer = ManagerController();

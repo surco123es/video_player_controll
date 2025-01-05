@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 
 import '../video_player_controll.dart';
-import 'controller.dart';
 
 typedef VoidCallback = void Function();
 typedef ShowFunc = void Function(bool show);
@@ -652,7 +651,7 @@ class FullScreemButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () => managerPlayer.fullScreen
-          ? managerPlayer.exitFullScreen(token: token)
+          ? managerPlayer.exitFullScreen(context, token: token)
           : managerPlayer.enterfullScreen(
               context,
               token: token,
@@ -710,23 +709,26 @@ class _SettingButtonState extends State<SettingButton> {
   @override
   void dispose() {
     sub.cancel();
+    if (showSetting) {
+      {
+        settingShow.remove();
+      }
+    }
     super.dispose();
   }
 
   @override
   build(BuildContext context) {
-    // maxHeigth = controller.player.state.height ?? 0;
     return CompositedTransformTarget(
       link: widget.link,
-      child: IconButton(
-        onPressed: () {
+      child: TapRegion(
+        onTapInside: (_) {
           if (showSetting) {
             settingShow.remove();
           } else {
             settingShow = OverlayEntry(
               builder: (context) => SettingAndPlayer(
                 link: widget.link,
-                maxHeigth: maxHeigth,
                 media: media,
                 token: widget.token,
                 hide: () {
@@ -740,7 +742,7 @@ class _SettingButtonState extends State<SettingButton> {
           showSetting = !showSetting;
           widget.onChange(showSetting);
         },
-        icon: Row(
+        child: Row(
           children: [
             Icon(
               Icons.settings,
@@ -763,25 +765,24 @@ class _SettingButtonState extends State<SettingButton> {
 }
 
 class SettingAndPlayer extends StatefulWidget {
-  LayerLink link;
-  FormatMedia media;
-  int maxHeigth;
-  VoidCallback hide;
-  int token;
-  SettingAndPlayer({
+  final LayerLink link;
+  final FormatMedia media;
+  final VoidCallback hide;
+  final int token;
+
+  const SettingAndPlayer({
     super.key,
     required this.link,
     required this.media,
     required this.token,
-    required this.maxHeigth,
     required this.hide,
   });
 
   @override
-  State<SettingAndPlayer> createState() => _SettingAndPlayer();
+  State<SettingAndPlayer> createState() => _SettingAndPlayerState();
 }
 
-class _SettingAndPlayer extends State<SettingAndPlayer> {
+class _SettingAndPlayerState extends State<SettingAndPlayer> {
   ThemeControllData theme = videoPlayerControll.getTheme();
   Offset position = Offset.zero;
   GlobalKey gKey = GlobalKey();
@@ -792,19 +793,16 @@ class _SettingAndPlayer extends State<SettingAndPlayer> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     activeItemResolution = widget.media.indexPlayer;
     activeItemSpeedRate =
         managerPlayer.getPlayer(token: widget.token).rateIndex;
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) {
-        getPosition();
-      },
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getPosition();
+    });
   }
 
-  getPosition() {
+  void getPosition() {
     RenderBox rn = gKey.currentContext?.findRenderObject() as RenderBox;
     setState(() {
       position = Offset(-(rn.size.width / 2), -(rn.size.height + 10));
@@ -813,42 +811,37 @@ class _SettingAndPlayer extends State<SettingAndPlayer> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
-    if (timerCall != null) {
-      timerCall!.cancel();
-    }
+    timerCall?.cancel();
     super.dispose();
   }
 
-  Widget botonSettingTitle({required int visibleIndex, required String title}) {
+  Widget buildSettingTitle({required int visibleIndex, required String title}) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: TapRegion(
-          onTapInside: (_) {
-            setState(() {
-              visible = visible == visibleIndex ? 0 : visibleIndex;
-              timerCall = Timer(
-                const Duration(milliseconds: 100),
-                () {
-                  getPosition();
-                },
-              );
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            visible = visible == visibleIndex ? 0 : visibleIndex;
+            timerCall = Timer(const Duration(milliseconds: 50), () {
+              getPosition();
             });
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 0),
-            width: double.infinity,
-            decoration: visible == visibleIndex
-                ? theme.activeItemMenu
-                : theme.subResolutionDecoration,
-            padding: EdgeInsets.all(theme.subPaddingResolution),
-            child: Text(
-              title,
-              style: visible == visibleIndex
-                  ? theme.activeItemMenuText
-                  : theme.resolutionStyleTextItems,
-            ),
-          )),
+          });
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          width: double.infinity,
+          decoration: visible == visibleIndex
+              ? theme.activeItemMenu
+              : theme.subResolutionDecoration,
+          padding: EdgeInsets.all(theme.subPaddingResolution),
+          child: Text(
+            title,
+            style: visible == visibleIndex
+                ? theme.activeItemMenuText
+                : theme.resolutionStyleTextItems,
+          ),
+        ),
+      ),
     );
   }
 
@@ -863,12 +856,9 @@ class _SettingAndPlayer extends State<SettingAndPlayer> {
             link: widget.link,
             child: TapRegion(
               onTapOutside: (_) {
-                timerCall = Timer(
-                  const Duration(milliseconds: 200),
-                  () {
-                    widget.hide();
-                  },
-                );
+                timerCall = Timer(const Duration(milliseconds: 200), () {
+                  widget.hide();
+                });
               },
               child: Container(
                 key: gKey,
@@ -882,50 +872,63 @@ class _SettingAndPlayer extends State<SettingAndPlayer> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (widget.media.format.length > 1)
-                        botonSettingTitle(
-                            visibleIndex: 1,
-                            title: managerPlayer.language.resolution),
+                        buildSettingTitle(
+                          visibleIndex: 1,
+                          title: managerPlayer.language.resolution,
+                        ),
                       if (visible == 1)
-                        ListView(
-                          children: widget.media.format
-                              .asMap()
-                              .entries
-                              .map(
-                                (e) => MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  child: TapRegion(
-                                    onTapInside: (_) {
-                                      if (e.key !=
-                                          managerPlayer
-                                              .getMedia(token: widget.token)!
-                                              .indexPlayer) {
-                                        managerPlayer.setResolution(
-                                            token: widget.token, index: e.key);
-                                      }
-                                      setState(() {
-                                        activeItemResolution = e.key;
-                                      });
-                                    },
-                                    child: Container(
-                                      width: double.infinity,
-                                      decoration: activeItemResolution == e.key
-                                          ? theme.activeItemListMenu
-                                          : theme.subResolutionDecorationItem,
-                                      padding: EdgeInsets.all(
-                                          theme.paddingResolution),
-                                      child: Text(
-                                        e.value.resolution,
-                                        style: activeItemResolution == e.key
-                                            ? theme.activeItemMenuText
-                                            : theme.resolutionStyleTextItems,
+                        SizedBox(
+                          height: widget.media.format.length > 6 ? 180 : null,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.vertical,
+                            child: Column(
+                              children: widget.media.format
+                                  .asMap()
+                                  .entries
+                                  .map(
+                                    (e) => MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          if (e.key !=
+                                              managerPlayer
+                                                  .getMedia(
+                                                      token: widget.token)!
+                                                  .indexPlayer) {
+                                            managerPlayer.setResolution(
+                                              token: widget.token,
+                                              index: e.key,
+                                            );
+                                          }
+                                          setState(() {
+                                            activeItemResolution = e.key;
+                                          });
+                                        },
+                                        child: Container(
+                                          width: double.infinity,
+                                          decoration: activeItemResolution ==
+                                                  e.key
+                                              ? theme.activeItemListMenu
+                                              : theme
+                                                  .subResolutionDecorationItem,
+                                          padding: EdgeInsets.all(
+                                              theme.paddingResolution),
+                                          child: Text(
+                                            e.value.resolution,
+                                            style: activeItemResolution == e.key
+                                                ? theme.activeItemMenuText
+                                                : theme
+                                                    .resolutionStyleTextItems,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                                  )
+                                  .toList(),
+                            ),
+                          ),
                         ),
-                      botonSettingTitle(
+                      buildSettingTitle(
                         visibleIndex: 2,
                         title: managerPlayer.language.speedRate,
                       ),
@@ -948,34 +951,37 @@ class _SettingAndPlayer extends State<SettingAndPlayer> {
                               } else if (index == 4) {
                                 tl = '0.5';
                               }
-                              return TapRegion(
-                                  onTapInside: (_) {
-                                    managerPlayer
-                                        .getController(token: widget.token)
-                                        .player
-                                        .setRate(rt);
-                                    managerPlayer.setRatePlayer(
-                                        index: index, token: widget.token);
-                                    setState(() {
-                                      activeItemSpeedRate = index;
-                                    });
-                                  },
-                                  child: Container(
-                                    decoration: activeItemSpeedRate == index
-                                        ? theme.activeItemListMenu
-                                        : theme.subResolutionDecorationItem,
-                                    padding:
-                                        EdgeInsets.all(theme.paddingResolution),
-                                    child: Text(
-                                      tl,
-                                      style: activeItemSpeedRate == index
-                                          ? theme.activeItemMenuText
-                                          : theme.resolutionStyleTextItems,
-                                    ),
-                                  ));
+                              return GestureDetector(
+                                onTap: () {
+                                  managerPlayer
+                                      .getController(token: widget.token)
+                                      .player
+                                      .setRate(rt);
+                                  managerPlayer.setRatePlayer(
+                                    index: index,
+                                    token: widget.token,
+                                  );
+                                  setState(() {
+                                    activeItemSpeedRate = index;
+                                  });
+                                },
+                                child: Container(
+                                  decoration: activeItemSpeedRate == index
+                                      ? theme.activeItemListMenu
+                                      : theme.subResolutionDecorationItem,
+                                  padding:
+                                      EdgeInsets.all(theme.paddingResolution),
+                                  child: Text(
+                                    tl,
+                                    style: activeItemSpeedRate == index
+                                        ? theme.activeItemMenuText
+                                        : theme.resolutionStyleTextItems,
+                                  ),
+                                ),
+                              );
                             },
                           ),
-                        )
+                        ),
                     ],
                   ),
                 ),
@@ -1058,7 +1064,9 @@ class _BtnManagerDurationState extends State<VolumenAndBrightControll> {
       (_) async {
         try {
           await initFunc();
-        } catch (e) {}
+        } catch (e) {
+          print(e);
+        }
       },
     );
     sub = managerPlayer
@@ -1091,9 +1099,9 @@ class _BtnManagerDurationState extends State<VolumenAndBrightControll> {
 
   @override
   void dispose() {
+    sub.cancel();
     // TODO: implement dispose
     super.dispose();
-    sub.cancel();
   }
 
   @override
@@ -1330,14 +1338,9 @@ class _PlayOrPauseAnimationState extends State<PlayOrPauseAnimation> {
       child: AnimatedOpacity(
         opacity: opacity,
         onEnd: () {
-          Future.delayed(
-            const Duration(milliseconds: 250),
-            () {
-              setState(() {
-                opacity = 0;
-              });
-            },
-          );
+          setState(() {
+            opacity = 0;
+          });
         },
         duration: const Duration(milliseconds: 500),
         child: Container(

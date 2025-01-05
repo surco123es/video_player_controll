@@ -12,19 +12,6 @@ import '../video_player_controll.dart';
 import 'languaje.dart';
 import 'player.dart';
 
-class DataPlaying {
-  bool load, updateResolution, fullScreen, exitFullScreen;
-  int token;
-
-  DataPlaying({
-    required this.token,
-    this.load = false,
-    this.updateResolution = false,
-    this.fullScreen = false,
-    this.exitFullScreen = false,
-  });
-}
-
 class DataPlayer {
   Duration currentPlay, totalPlay, bufferPlay;
   final List<StreamSubscription> _sub = [];
@@ -38,7 +25,6 @@ class DataPlayer {
     this.rateIndex = 2,
   });
   listen({required int token}) {
-    totalPlay = managerPlayer.getController(token: token).player.state.duration;
     _sub.addAll([
       managerPlayer.getController(token: token).player.stream.buffer.listen(
         (e) {
@@ -48,6 +34,14 @@ class DataPlayer {
       managerPlayer.getController(token: token).player.stream.position.listen(
         (e) {
           currentPlay = e;
+        },
+      ),
+      managerPlayer.getController(token: token).player.stream.duration.listen(
+        (e) {
+          if (totalPlay == Duration.zero) {
+            managerPlayer.streamPlayer.sink
+                .add(DataPlaying(token: token, load: true));
+          }
         },
       ),
     ]);
@@ -66,7 +60,7 @@ class ManagerController {
   final Map<int, DataPlayer> _player = {};
   final List<Timer> _future = [];
 
-  late OverlayEntry _overFullScreen;
+  late OverlayEntry _over;
 
   LanguageSetting language = LanguageSetting();
   int tokenFullScreen = 0;
@@ -106,8 +100,11 @@ class ManagerController {
     _player.addAll({token: DataPlayer()});
     _player[token]!.listen(token: token);
     _future.add(Timer(
-      const Duration(seconds: 3),
+      const Duration(milliseconds: 500),
       () async {
+        if (!_controll.containsKey(token)) {
+          return;
+        }
         streamPlayer.sink.add(DataPlaying(load: true, token: token));
 
         await _controll[token]!.player.setAudioTrack(AudioTrack.uri(
@@ -115,9 +112,8 @@ class ManagerController {
         await _controll[token]!.player.seek(position);
         if (videoPlayerControll.setting.autoPlay) {
           await _controll[token]!.player.play();
-        } else {
-          await _controll[token]!.player.pause();
         }
+        _controll[token]!.player.setVolume(videoPlayerControll.setting.volumen);
         repeat(token: token, repeat: videoPlayerControll.setting.repeat);
       },
     ));
@@ -178,7 +174,8 @@ class ManagerController {
 
   dispose({required int token}) async {
     if (_controll.containsKey(token)) {
-      await _controll[token]!.player.stop();
+      await _controll[token]!.player.platform!.dispose();
+      _controll.remove(token);
     }
   }
 
@@ -187,9 +184,13 @@ class ManagerController {
   }
 
   Future purgePlayer({required int token, bool all = false}) async {
+    print('vamos a purgar');
     if (!all) {
       await dispose(token: token);
       return;
+    }
+    for (Timer e in _future) {
+      e.cancel();
     }
     _controll.forEach(
       (k, value) async {
@@ -202,6 +203,7 @@ class ManagerController {
     tokenFullScreen = token;
     fullScreen = true;
     try {
+      streamPlayer.sink.add(DataPlaying(token: token, fullScreen: true));
       if (Platform.isAndroid || Platform.isIOS) {
         await Future.wait([
           SystemChrome.setEnabledSystemUIMode(
@@ -218,35 +220,24 @@ class ManagerController {
           'Utils.EnterNativeFullscreen',
         );
       }
-      _overFullScreen = OverlayEntry(
+      _over = OverlayEntry(
         builder: (context) {
           return Material(
             type: MaterialType.transparency,
-            child: Stack(
-              children: [
-                Positioned(
-                    left: 0,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: PlayerControlMain(
-                      token: token,
-                      fullScreen: true,
-                    )),
-              ],
+            child: fullScreenWidget(
+              token: token,
             ),
           );
         },
       );
-      streamPlayer.sink.add(DataPlaying(token: token, fullScreen: true));
-      Overlay.of(context).insert(_overFullScreen);
+      Overlay.of(context).insert(_over);
       WakelockPlus.enable();
     } catch (e) {
       print(e);
     }
   }
 
-  exitFullScreen({required int token}) async {
+  exitFullScreen(BuildContext context, {required int token}) async {
     fullScreen = false;
     backFullScreen = true;
     try {
@@ -259,13 +250,13 @@ class ManagerController {
           SystemChrome.setPreferredOrientations([]),
         ]);
       } else if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-        WakelockPlus.disable();
         await const MethodChannel('controller/kit_video_media').invokeMethod(
           'Utils.ExitNativeFullscreen',
         );
       }
-      _overFullScreen.remove();
       streamPlayer.sink.add(DataPlaying(token: token, exitFullScreen: true));
+      _over.remove();
+      WakelockPlus.disable();
     } catch (e) {
       print('algo paso aqui');
     }
@@ -294,5 +285,3 @@ class ManagerController {
     });
   }
 }
-
-ManagerController managerPlayer = ManagerController();

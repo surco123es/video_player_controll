@@ -102,6 +102,38 @@ class _PlayerMinState extends State<PlayerMin> {
       urlVideo:
           'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.mp4/.m3u8',
     ),
+    ResolutionFormat(
+      format: 'mp4',
+      resolution: 'm3u8',
+      type: TypeFormat.video,
+      urlAudio: '',
+      urlVideo:
+          'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.mp4/.m3u8',
+    ),
+    ResolutionFormat(
+      format: 'mp4',
+      resolution: 'm3u8',
+      type: TypeFormat.video,
+      urlAudio: '',
+      urlVideo:
+          'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.mp4/.m3u8',
+    ),
+    ResolutionFormat(
+      format: 'mp4',
+      resolution: 'm3u8',
+      type: TypeFormat.video,
+      urlAudio: '',
+      urlVideo:
+          'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.mp4/.m3u8',
+    ),
+    ResolutionFormat(
+      format: 'mp4',
+      resolution: 'm3u8',
+      type: TypeFormat.video,
+      urlAudio: '',
+      urlVideo:
+          'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.mp4/.m3u8',
+    ),
   ]);
   FormatMedia media2 = FormatMedia(title: '', indexPlayer: 0, format: [
     ResolutionFormat(
@@ -140,7 +172,6 @@ class _PlayerMinState extends State<PlayerMin> {
             videoPlayerControll.play(
                 media: media,
                 config: SettingMedia(
-                  repeat: true,
                   backgroundPlayer: true,
                 )),
             const Card(

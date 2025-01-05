@@ -6,14 +6,11 @@ import 'package:loading_animation/animation/circle.dart';
 
 import '../video_player_controll.dart';
 import 'buttonControll.dart';
-import 'controller.dart';
 
 class PlayerControlMain extends StatefulWidget {
-  bool fullScreen;
   int token;
   PlayerControlMain({
     super.key,
-    this.fullScreen = false,
     required this.token,
   });
 
@@ -30,7 +27,6 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
   bool showSetting = false;
   ThemeControllData theme = videoPlayerControll.getTheme();
   bool load = false;
-  bool rendePlayer = true;
   StreamSubscription? sdt;
   late FormatMedia? media;
   Size getSize() {
@@ -40,43 +36,30 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
 
   @override
   void initState() {
-    if (widget.fullScreen) {
-      load = true;
-    }
     if (managerPlayer.checkController(token: widget.token)) {
       load = true;
     }
     sdt = managerPlayer.streamPlayer.stream.listen(
       (e) {
-        if (e.load && !widget.fullScreen) {
+        if (e.load) {
           load = true;
-          futurePlayer = Timer(
-            const Duration(seconds: 1),
-            () {
-              setState(() {
-                rendePlayer = false;
-              });
-            },
-          );
         } else if (e.updateResolution) {
           setState(() {
             rebuild = true;
-            rendePlayer = true;
           });
           futurePlayer = Timer(
             const Duration(milliseconds: 500),
             () {
               setState(() {
                 rebuild = false;
-                rendePlayer = false;
               });
             },
           );
-        } else if (e.fullScreen && !widget.fullScreen) {
+        } else if (e.fullScreen) {
           setState(() {
             fullScream = true;
           });
-        } else if (e.exitFullScreen && !widget.fullScreen) {
+        } else if (e.exitFullScreen) {
           setState(() {
             fullScream = false;
           });
@@ -90,9 +73,9 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
   void dispose() {
     if (sdt != null) {
       sdt!.cancel();
-      if (!widget.fullScreen && !videoPlayerControll.setting.playBackground) {
-        managerPlayer.dispose(token: widget.token);
-      }
+    }
+    if (!videoPlayerControll.setting.backgroundPlayer) {
+      managerPlayer.dispose(token: widget.token);
     }
     futurePlayer?.cancel();
     super.dispose();
@@ -101,22 +84,20 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
   @override
   Widget build(BuildContext context) {
     media = managerPlayer.getMedia(token: widget.token);
+    if (media == null) {
+      return const Center(child: Text('Error: Media not found'));
+    }
     return Container(
       color: Colors.black,
       key: kg,
       child: Stack(
         children: [
-          fullScream
-              ? const SizedBox()
-              : PlayerControllWidget(
-                  token: widget.token,
-                ),
+          if (!fullScream)
+            PlayerControllWidget(
+              token: widget.token,
+            ),
           if (load)
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 0,
+            Positioned.fill(
               child: VolumenAndBrightControll(
                 token: widget.token,
               ),
@@ -172,6 +153,119 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
   }
 }
 
+class fullScreenWidget extends StatefulWidget {
+  int token;
+  fullScreenWidget({
+    super.key,
+    required this.token,
+  });
+
+  @override
+  State<fullScreenWidget> createState() => _fullScreenWidgetState();
+}
+
+class _fullScreenWidgetState extends State<fullScreenWidget> {
+  Timer? futurePlayer;
+
+  bool rebuild = false;
+
+  final LayerLink link = LayerLink();
+
+  GlobalKey kg = GlobalKey();
+
+  bool showSetting = false;
+
+  ThemeControllData theme = videoPlayerControll.getTheme();
+
+  StreamSubscription? sdt;
+
+  late FormatMedia? media;
+
+  @override
+  void initState() {
+    sdt = managerPlayer.streamPlayer.stream.listen(
+      (e) {
+        if (e.updateResolution) {
+          setState(() {
+            rebuild = true;
+          });
+        }
+      },
+    );
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    if (sdt != null) {
+      sdt!.cancel();
+    }
+    futurePlayer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    media = managerPlayer.getMedia(token: widget.token);
+    if (media == null) {
+      return const Center(child: Text('Error: Media not found'));
+    }
+    return Container(
+      color: Colors.black,
+      key: kg,
+      child: Stack(
+        children: [
+          PlayerControllWidget(
+            token: widget.token,
+          ),
+          Positioned.fill(
+            child: VolumenAndBrightControll(
+              token: widget.token,
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              decoration: theme.barControll,
+              child: Column(
+                children: [
+                  SeekBar(
+                    token: widget.token,
+                  ),
+                  Row(
+                    children: [
+                      PlayOrPauseButton(
+                        token: widget.token,
+                      ),
+                      VolumeButton(
+                        token: widget.token,
+                      ),
+                      const Spacer(),
+                      SettingButton(
+                        link: link,
+                        token: widget.token,
+                        onChange: (show) {
+                          showSetting = show;
+                        },
+                      ),
+                      FullScreemButton(
+                        token: widget.token,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          PlayOrPauseAnimation(token: widget.token),
+        ],
+      ),
+    );
+  }
+}
+
 class PlayerControllWidget extends StatelessWidget {
   int token;
   PlayerControllWidget({
@@ -185,7 +279,7 @@ class PlayerControllWidget extends StatelessWidget {
       controller: managerPlayer.getController(token: token),
       controls: NoVideoControls,
       pauseUponEnteringBackgroundMode:
-          !videoPlayerControll.setting.backgroundPlayer,
+          !videoPlayerControll.setting.playSleepBackground,
       resumeUponEnteringForegroundMode:
           videoPlayerControll.setting.resumenBackgroundRestart,
     );

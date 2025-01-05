@@ -2,6 +2,7 @@ name: video_player_controll
 description: "A new Flutter plugin project."
 version: 0.0.1
 homepage:
+publish_to: none
 
 environment:
   sdk: ^3.5.3

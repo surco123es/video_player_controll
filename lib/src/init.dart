@@ -1,10 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:video_player_controll/video_player_controll.dart';
-
-import 'controller.dart';
-import 'interface.dart';
-import 'model.dart';
 import 'player.dart';
 
 typedef getToken = Function(int token);
@@ -30,8 +26,6 @@ class PlayerControll {
     }
     if (setting.multiPlayer) {
       token = managerPlayer.token();
-    } else {
-      managerPlayer.purgePlayer(token: token, all: false);
     }
     if (theme != null) {
       _setTheme(theme: theme);
@@ -39,9 +33,7 @@ class PlayerControll {
     if (funcStart != null) {
       funcStart(token);
     }
-    if (managerPlayer.checkController(token: token)) {
-      pFunc.open(format: media, token: token);
-    } else {
+    if (!managerPlayer.checkController(token: token)) {
       managerPlayer.setMedia(v: media, token: token);
       managerPlayer.setController(token: token);
     }
