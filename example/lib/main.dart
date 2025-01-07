@@ -170,10 +170,8 @@ class _PlayerMinState extends State<PlayerMin> {
               child: Text('data'),
             ),
             videoPlayerControll.play(
-                media: media,
-                config: SettingMedia(
-                  backgroundPlayer: true,
-                )),
+              media: media,
+            ),
             const Card(
               child: Text('data'),
             ),

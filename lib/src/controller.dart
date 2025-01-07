@@ -58,7 +58,7 @@ class ManagerController {
   final Map<int, VideoController> _controll = {};
   final Map<int, FormatMedia> _format = {};
   final Map<int, DataPlayer> _player = {};
-  final List<Timer> _future = [];
+  final Map<int, Timer> _future = {};
 
   late OverlayEntry _over;
 
@@ -68,6 +68,7 @@ class ManagerController {
   bool backFullScreen = false;
   StreamController<DataPlaying> streamPlayer =
       StreamController<DataPlaying>.broadcast();
+
   setLanguage({required LanguageSetting lang}) {
     language = lang;
   }
@@ -99,24 +100,25 @@ class ManagerController {
 
     _player.addAll({token: DataPlayer()});
     _player[token]!.listen(token: token);
-    _future.add(Timer(
-      const Duration(milliseconds: 500),
-      () async {
-        if (!_controll.containsKey(token)) {
-          return;
-        }
-        streamPlayer.sink.add(DataPlaying(load: true, token: token));
+    _future.addAll({
+      token: Timer(
+        const Duration(milliseconds: 1000),
+        () async {
+          streamPlayer.sink.add(DataPlaying(load: true, token: token));
 
-        await _controll[token]!.player.setAudioTrack(AudioTrack.uri(
-            _format[token]!.format[_format[token]!.indexPlayer].urlAudio));
-        await _controll[token]!.player.seek(position);
-        if (videoPlayerControll.setting.autoPlay) {
-          await _controll[token]!.player.play();
-        }
-        _controll[token]!.player.setVolume(videoPlayerControll.setting.volumen);
-        repeat(token: token, repeat: videoPlayerControll.setting.repeat);
-      },
-    ));
+          await _controll[token]!.player.setAudioTrack(AudioTrack.uri(
+              _format[token]!.format[_format[token]!.indexPlayer].urlAudio));
+          await _controll[token]!.player.seek(position);
+          if (videoPlayerControll.setting.autoPlay) {
+            await _controll[token]!.player.play();
+          }
+          _controll[token]!
+              .player
+              .setVolume(videoPlayerControll.setting.volumen);
+          repeat(token: token, repeat: videoPlayerControll.setting.repeat);
+        },
+      )
+    });
   }
 
   setIndexPlay({required int index, required int token}) {
@@ -174,8 +176,8 @@ class ManagerController {
 
   dispose({required int token}) async {
     if (_controll.containsKey(token)) {
-      await _controll[token]!.player.platform!.dispose();
-      _controll.remove(token);
+      _future[token]!.cancel();
+      await _controll[token]!.player.platform!.stop();
     }
   }
 
@@ -184,13 +186,9 @@ class ManagerController {
   }
 
   Future purgePlayer({required int token, bool all = false}) async {
-    print('vamos a purgar');
     if (!all) {
       await dispose(token: token);
       return;
-    }
-    for (Timer e in _future) {
-      e.cancel();
     }
     _controll.forEach(
       (k, value) async {

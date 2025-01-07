@@ -33,7 +33,9 @@ class PlayerControll {
     if (funcStart != null) {
       funcStart(token);
     }
-    if (!managerPlayer.checkController(token: token)) {
+    if (managerPlayer.checkController(token: token)) {
+      pFunc.open(format: media, token: token);
+    } else {
       managerPlayer.setMedia(v: media, token: token);
       managerPlayer.setController(token: token);
     }
