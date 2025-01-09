@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:kit_video_media/kit_video_media.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:synchronized/synchronized.dart';
 
 import '../video_player_controll.dart';
 import 'languaje.dart';
@@ -59,7 +60,7 @@ class ManagerController {
   final Map<int, FormatMedia> _format = {};
   final Map<int, DataPlayer> _player = {};
   final Map<int, Timer> _future = {};
-
+  final Lock lock = Lock();
   late OverlayEntry _over;
 
   LanguageSetting language = LanguageSetting();
@@ -218,17 +219,25 @@ class ManagerController {
           'Utils.EnterNativeFullscreen',
         );
       }
-      _over = OverlayEntry(
-        builder: (context) {
-          return Material(
-            type: MaterialType.transparency,
-            child: fullScreenWidget(
-              token: token,
+      await lock.synchronized(
+        () async {
+          if (!context.mounted) {
+            return;
+          }
+          await Navigator.maybeOf(context, rootNavigator: true)?.push(
+            PageRouteBuilder(
+              fullscreenDialog: true,
+              pageBuilder: (context, _, __) => Material(
+                child: FullScreenWidget(
+                  token: token,
+                ),
+              ),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
             ),
           );
         },
       );
-      Overlay.of(context).insert(_over);
       WakelockPlus.enable();
     } catch (e) {
       print(e);
@@ -252,8 +261,15 @@ class ManagerController {
           'Utils.ExitNativeFullscreen',
         );
       }
+      await lock.synchronized(
+        () async {
+          if (!context.mounted) {
+            return;
+          }
+          await Navigator.of(context).maybePop();
+        },
+      );
       streamPlayer.sink.add(DataPlaying(token: token, exitFullScreen: true));
-      _over.remove();
       WakelockPlus.disable();
     } catch (e) {
       print('algo paso aqui');

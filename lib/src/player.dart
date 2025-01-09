@@ -19,7 +19,7 @@ class PlayerControlMain extends StatefulWidget {
 }
 
 class _PlayerControlMainState extends State<PlayerControlMain> {
-  bool fullScream = false;
+  bool fullScreen = false;
   Timer? futurePlayer;
   bool rebuild = false;
   final LayerLink link = LayerLink();
@@ -57,11 +57,11 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
           );
         } else if (e.fullScreen) {
           setState(() {
-            fullScream = true;
+            fullScreen = true;
           });
         } else if (e.exitFullScreen) {
           setState(() {
-            fullScream = false;
+            fullScreen = false;
           });
         }
       },
@@ -74,7 +74,8 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
     if (sdt != null) {
       sdt!.cancel();
     }
-    if (!videoPlayerControll.setting.backgroundPlayer) {
+    if (!videoPlayerControll.setting.backgroundPlayer && !fullScreen) {
+      print('dispose');
       managerPlayer.dispose(token: widget.token);
     }
     futurePlayer?.cancel();
@@ -92,7 +93,7 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
       key: kg,
       child: Stack(
         children: [
-          if (!fullScream)
+          if (!fullScreen)
             PlayerControllWidget(
               token: widget.token,
             ),
@@ -153,18 +154,18 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
   }
 }
 
-class fullScreenWidget extends StatefulWidget {
+class FullScreenWidget extends StatefulWidget {
   int token;
-  fullScreenWidget({
+  FullScreenWidget({
     super.key,
     required this.token,
   });
 
   @override
-  State<fullScreenWidget> createState() => _fullScreenWidgetState();
+  State<FullScreenWidget> createState() => _fullScreenWidgetState();
 }
 
-class _fullScreenWidgetState extends State<fullScreenWidget> {
+class _fullScreenWidgetState extends State<FullScreenWidget> {
   Timer? futurePlayer;
 
   bool rebuild = false;
@@ -183,6 +184,7 @@ class _fullScreenWidgetState extends State<fullScreenWidget> {
 
   @override
   void initState() {
+    media = managerPlayer.getMedia(token: widget.token);
     sdt = managerPlayer.streamPlayer.stream.listen(
       (e) {
         if (e.updateResolution) {
@@ -206,7 +208,6 @@ class _fullScreenWidgetState extends State<fullScreenWidget> {
 
   @override
   Widget build(BuildContext context) {
-    media = managerPlayer.getMedia(token: widget.token);
     if (media == null) {
       return const Center(child: Text('Error: Media not found'));
     }

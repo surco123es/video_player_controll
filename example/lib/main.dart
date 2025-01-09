@@ -144,6 +144,7 @@ class _PlayerMinState extends State<PlayerMin> {
       urlVideo: 'https://nio.ilove-soft.com/media/1080.mp4',
     ),
   ]);
+  OverlayEntry? over;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,8 +170,20 @@ class _PlayerMinState extends State<PlayerMin> {
             const Card(
               child: Text('data'),
             ),
-            videoPlayerControll.play(
-              media: media,
+            TapRegion(
+              onTapInside: (_) {
+                over = OverlayEntry(
+                  builder: (context) {
+                    return Material(
+                      child: videoPlayerControll.play(
+                        media: media,
+                      ),
+                    );
+                  },
+                );
+                Overlay.of(context).insert(over!);
+              },
+              child: const Text('Ver Reproductor'),
             ),
             const Card(
               child: Text('data'),
