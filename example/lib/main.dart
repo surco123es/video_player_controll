@@ -173,6 +173,7 @@ class _PlayerMinState extends State<PlayerMin> {
             TapRegion(
               onTapInside: (_) {
                 over = OverlayEntry(
+                  maintainState: true,
                   builder: (context) {
                     return Material(
                       child: videoPlayerControll.play(
