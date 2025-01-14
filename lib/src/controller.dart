@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:kit_video_media/kit_video_media.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:synchronized/synchronized.dart';
 
 import '../video_player_controll.dart';
 import 'languaje.dart';
@@ -18,6 +17,7 @@ class DataPlayer {
   final List<StreamSubscription> _sub = [];
   bool returnPlay;
   int rateIndex;
+  bool playing = false;
   DataPlayer({
     this.currentPlay = Duration.zero,
     this.totalPlay = Duration.zero,
@@ -43,6 +43,18 @@ class DataPlayer {
             managerPlayer.streamPlayer.sink
                 .add(DataPlaying(token: token, load: true));
           }
+          if (!playing) {
+            managerPlayer.streamPlayer.sink.add(DataPlaying(
+              token: token,
+              load: true,
+            ));
+          }
+        },
+      ),
+      managerPlayer.getController(token: token).player.stream.playing.listen(
+        (e) {
+          playing = e;
+          print(e ? 'se esta reproduciendo' : 'se detuvo');
         },
       ),
     ]);
@@ -60,8 +72,6 @@ class ManagerController {
   final Map<int, FormatMedia> _format = {};
   final Map<int, DataPlayer> _player = {};
   final Map<int, Timer> _future = {};
-  final Lock lock = Lock();
-  late OverlayEntry _over;
 
   LanguageSetting language = LanguageSetting();
   int tokenFullScreen = 0;
@@ -69,6 +79,8 @@ class ManagerController {
   bool backFullScreen = false;
   StreamController<DataPlaying> streamPlayer =
       StreamController<DataPlaying>.broadcast();
+
+  OverlayEntry? _fullscreenOverlay;
 
   setLanguage({required LanguageSetting lang}) {
     language = lang;
@@ -103,10 +115,8 @@ class ManagerController {
     _player[token]!.listen(token: token);
     _future.addAll({
       token: Timer(
-        const Duration(milliseconds: 1000),
+        const Duration(milliseconds: 250),
         () async {
-          streamPlayer.sink.add(DataPlaying(load: true, token: token));
-
           await _controll[token]!.player.setAudioTrack(AudioTrack.uri(
               _format[token]!.format[_format[token]!.indexPlayer].urlAudio));
           await _controll[token]!.player.seek(position);
@@ -203,6 +213,12 @@ class ManagerController {
     fullScreen = true;
     try {
       streamPlayer.sink.add(DataPlaying(token: token, fullScreen: true));
+      _fullscreenOverlay = OverlayEntry(
+        builder: (context) => Material(
+          child: FullScreenWidget(token: token),
+        ),
+      );
+      Overlay.of(context, rootOverlay: true).insert(_fullscreenOverlay!);
       if (Platform.isAndroid || Platform.isIOS) {
         await Future.wait([
           SystemChrome.setEnabledSystemUIMode(
@@ -219,25 +235,7 @@ class ManagerController {
           'Utils.EnterNativeFullscreen',
         );
       }
-      await lock.synchronized(
-        () async {
-          if (!context.mounted) {
-            return;
-          }
-          await Navigator.maybeOf(context, rootNavigator: true)?.push(
-            PageRouteBuilder(
-              fullscreenDialog: true,
-              pageBuilder: (context, _, __) => Material(
-                child: FullScreenWidget(
-                  token: token,
-                ),
-              ),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          );
-        },
-      );
+
       WakelockPlus.enable();
     } catch (e) {
       print(e);
@@ -248,6 +246,8 @@ class ManagerController {
     fullScreen = false;
     backFullScreen = true;
     try {
+      _fullscreenOverlay?.remove();
+      _fullscreenOverlay = null;
       if (Platform.isAndroid || Platform.isIOS) {
         await Future.wait([
           SystemChrome.setEnabledSystemUIMode(
@@ -261,14 +261,7 @@ class ManagerController {
           'Utils.ExitNativeFullscreen',
         );
       }
-      await lock.synchronized(
-        () async {
-          if (!context.mounted) {
-            return;
-          }
-          await Navigator.of(context).maybePop();
-        },
-      );
+
       streamPlayer.sink.add(DataPlaying(token: token, exitFullScreen: true));
       WakelockPlus.disable();
     } catch (e) {
@@ -287,7 +280,7 @@ class ManagerController {
     _controll[token]
         ?.player
         .open(Media(_format[token]!.format[index].urlVideo), play: false);
-    Future.delayed(const Duration(milliseconds: 150), () {
+    Future.delayed(const Duration(milliseconds: 350), () {
       if (_format[token]!.format[index].urlAudio != '') {
         _controll[token]?.player.setAudioTrack(
             AudioTrack.uri(_format[token]!.format[index].urlAudio));

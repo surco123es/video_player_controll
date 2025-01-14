@@ -173,7 +173,6 @@ class _PlayerMinState extends State<PlayerMin> {
             TapRegion(
               onTapInside: (_) {
                 over = OverlayEntry(
-                  maintainState: true,
                   builder: (context) {
                     return Material(
                       child: videoPlayerControll.play(
@@ -182,7 +181,7 @@ class _PlayerMinState extends State<PlayerMin> {
                     );
                   },
                 );
-                Overlay.of(context).insert(over!);
+                Overlay.of(context, rootOverlay: false).insert(over!);
               },
               child: const Text('Ver Reproductor'),
             ),

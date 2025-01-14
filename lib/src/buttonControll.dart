@@ -1238,7 +1238,7 @@ class _BtnManagerDurationState extends State<VolumenAndBrightControll> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AnimatedOpacity(
-                    duration: Duration(milliseconds: 500),
+                    duration: const Duration(milliseconds: 500),
                     opacity: showVolumen ? 1 : 0,
                     child: Container(
                       padding: const EdgeInsets.symmetric(

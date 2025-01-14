@@ -36,19 +36,18 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
 
   @override
   void initState() {
-    if (managerPlayer.checkController(token: widget.token)) {
-      load = true;
-    }
     sdt = managerPlayer.streamPlayer.stream.listen(
       (e) {
         if (e.load) {
-          load = true;
+          setState(() {
+            load = true;
+          });
         } else if (e.updateResolution) {
           setState(() {
             rebuild = true;
           });
           futurePlayer = Timer(
-            const Duration(milliseconds: 500),
+            const Duration(milliseconds: 250),
             () {
               setState(() {
                 rebuild = false;
@@ -75,7 +74,7 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
       sdt!.cancel();
     }
     if (!videoPlayerControll.setting.backgroundPlayer && !fullScreen) {
-      print('dispose');
+      print('se detendra el roproductor');
       managerPlayer.dispose(token: widget.token);
     }
     futurePlayer?.cancel();
@@ -191,6 +190,14 @@ class _fullScreenWidgetState extends State<FullScreenWidget> {
           setState(() {
             rebuild = true;
           });
+          futurePlayer = Timer(
+            const Duration(milliseconds: 500),
+            () {
+              setState(() {
+                rebuild = false;
+              });
+            },
+          );
         }
       },
     );
@@ -267,7 +274,7 @@ class _fullScreenWidgetState extends State<FullScreenWidget> {
   }
 }
 
-class PlayerControllWidget extends StatelessWidget {
+class PlayerControllWidget extends StatefulWidget {
   int token;
   PlayerControllWidget({
     super.key,
@@ -275,9 +282,25 @@ class PlayerControllWidget extends StatelessWidget {
   });
 
   @override
+  State<PlayerControllWidget> createState() => _PlayerControllWidgetState();
+}
+
+class _PlayerControllWidgetState extends State<PlayerControllWidget> {
+  late VideoController video;
+  @override
+  void initState() {
+    // TODO: implement initState
+    video = managerPlayer.getController(token: widget.token);
+    if (!video.player.state.playing) {
+      print('el video no se esta reproduciendo');
+    }
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Video(
-      controller: managerPlayer.getController(token: token),
+      controller: video,
       controls: NoVideoControls,
       pauseUponEnteringBackgroundMode:
           !videoPlayerControll.setting.playSleepBackground,

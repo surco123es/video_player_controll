@@ -16,6 +16,7 @@ class PlayerControll {
     Size size = Size.zero,
     required FormatMedia media,
     int token = 0,
+    bool forcePlay = false,
   }) {
     if (!_init) {
       return const Text(
@@ -34,7 +35,9 @@ class PlayerControll {
       funcStart(token);
     }
     if (managerPlayer.checkController(token: token)) {
-      pFunc.open(format: media, token: token);
+      if (!managerPlayer.getPlayer(token: token).playing && forcePlay) {
+        pFunc.open(format: media, token: token);
+      }
     } else {
       managerPlayer.setMedia(v: media, token: token);
       managerPlayer.setController(token: token);
