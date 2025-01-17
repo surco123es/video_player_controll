@@ -71,7 +71,6 @@ class ManagerController {
   final Map<int, VideoController> _controll = {};
   final Map<int, FormatMedia> _format = {};
   final Map<int, DataPlayer> _player = {};
-  final Map<int, Timer> _future = {};
 
   LanguageSetting language = LanguageSetting();
   int tokenFullScreen = 0;
@@ -113,10 +112,11 @@ class ManagerController {
 
     _player.addAll({token: DataPlayer()});
     _player[token]!.listen(token: token);
-    _future.addAll({
-      token: Timer(
-        const Duration(milliseconds: 250),
-        () async {
+
+    late StreamSubscription sub;
+    sub = _controll[token]!.player.stream.duration.listen(
+      (e) async {
+        if (e != Duration.zero) {
           await _controll[token]!.player.setAudioTrack(AudioTrack.uri(
               _format[token]!.format[_format[token]!.indexPlayer].urlAudio));
           await _controll[token]!.player.seek(position);
@@ -127,9 +127,10 @@ class ManagerController {
               .player
               .setVolume(videoPlayerControll.setting.volumen);
           repeat(token: token, repeat: videoPlayerControll.setting.repeat);
-        },
-      )
-    });
+        }
+        sub.cancel();
+      },
+    );
   }
 
   setIndexPlay({required int index, required int token}) {
@@ -187,7 +188,6 @@ class ManagerController {
 
   dispose({required int token}) async {
     if (_controll.containsKey(token)) {
-      _future[token]!.cancel();
       await _controll[token]!.player.platform!.stop();
     }
   }
@@ -273,22 +273,37 @@ class ManagerController {
     required int token,
     required int index,
   }) async {
+    streamPlayer.sink.add(DataPlaying(
+      token: token,
+      updateResolution: true,
+    ));
     Duration goCurrent = _player[token]!.currentPlay;
     bool play = _controll[token]!.player.state.playing;
     _format[token]!.indexPlayer = index;
     _controll[token]?.player.stop();
-    _controll[token]
+    late StreamSubscription sub;
+    await _controll[token]
         ?.player
         .open(Media(_format[token]!.format[index].urlVideo), play: false);
-    Future.delayed(const Duration(milliseconds: 350), () {
-      if (_format[token]!.format[index].urlAudio != '') {
-        _controll[token]?.player.setAudioTrack(
-            AudioTrack.uri(_format[token]!.format[index].urlAudio));
-      }
-      _controll[token]?.player.seek(goCurrent);
-      if (play) {
-        _controll[token]!.player.play();
-      }
-    });
+
+    sub = _controll[token]!.player.stream.duration.listen(
+      (e) {
+        if (Duration.zero != e) {
+          _controll[token]?.player.seek(goCurrent);
+          if (_format[token]!.format[index].urlAudio != '') {
+            _controll[token]?.player.setAudioTrack(
+                AudioTrack.uri(_format[token]!.format[index].urlAudio));
+          }
+          if (play) {
+            _controll[token]!.player.play();
+          }
+          sub.cancel();
+          streamPlayer.sink.add(DataPlaying(
+            token: token,
+            loadResolution: true,
+          ));
+        }
+      },
+    );
   }
 }

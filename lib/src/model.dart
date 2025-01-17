@@ -66,13 +66,14 @@ class PlayVideo {
 }
 
 class DataPlaying {
-  bool load, updateResolution, fullScreen, exitFullScreen;
+  bool load, updateResolution, loadResolution, fullScreen, exitFullScreen;
   int token;
 
   DataPlaying({
     required this.token,
     this.load = false,
     this.updateResolution = false,
+    this.loadResolution = false,
     this.fullScreen = false,
     this.exitFullScreen = false,
   });

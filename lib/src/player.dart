@@ -44,16 +44,12 @@ class _PlayerControlMainState extends State<PlayerControlMain> {
           });
         } else if (e.updateResolution) {
           setState(() {
-            rebuild = true;
+            load = false;
           });
-          futurePlayer = Timer(
-            const Duration(milliseconds: 250),
-            () {
-              setState(() {
-                rebuild = false;
-              });
-            },
-          );
+        } else if (e.loadResolution) {
+          setState(() {
+            load = true;
+          });
         } else if (e.fullScreen) {
           setState(() {
             fullScreen = true;
