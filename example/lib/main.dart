@@ -175,9 +175,7 @@ class _PlayerMinState extends State<PlayerMin> {
                 over = OverlayEntry(
                   builder: (context) {
                     return Material(
-                      child: videoPlayerControll.play(
-                        media: media,
-                      ),
+                      child: PlayerMedia(media: media),
                     );
                   },
                 );

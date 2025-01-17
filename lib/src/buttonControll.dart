@@ -31,7 +31,7 @@ class _SeekBar extends State<SeekBar> {
   bool hover = false;
   bool click = false;
   double slider = 0.0;
-  ThemeControllData theme = videoPlayerControll.getTheme();
+  ThemeControllData theme = videoPlayerControll.theme;
 
   late bool playing = false;
   late Duration position = Duration.zero;
@@ -305,7 +305,7 @@ class PlayOrPauseButton extends StatefulWidget {
 
 class _playOrPauseButton extends State<PlayOrPauseButton>
     with SingleTickerProviderStateMixin {
-  ThemeControllData theme = videoPlayerControll.getTheme();
+  ThemeControllData theme = videoPlayerControll.theme;
   bool play = false;
   late final animation = AnimationController(
     vsync: this,
@@ -441,7 +441,7 @@ class _VolumeButton extends State<VolumeButton>
   }
 
   StreamSubscription<double>? subscription;
-  ThemeControllData theme = videoPlayerControll.getTheme();
+  ThemeControllData theme = videoPlayerControll.theme;
 
   bool hover = false;
 
@@ -637,7 +637,7 @@ class FullScreemButton extends StatelessWidget {
   final double? iconSize;
 
   final Color? iconColor;
-  ThemeControllData theme = videoPlayerControll.getTheme();
+  ThemeControllData theme = videoPlayerControll.theme;
 
   FullScreemButton({
     super.key,
@@ -692,7 +692,7 @@ class _SettingButtonState extends State<SettingButton> {
 
   bool showSetting = false;
   late StreamSubscription sub;
-  ThemeControllData theme = videoPlayerControll.getTheme();
+  ThemeControllData theme = videoPlayerControll.theme;
   @override
   void initState() {
     media = managerPlayer.getMedia(token: widget.token)!;
@@ -783,7 +783,7 @@ class SettingAndPlayer extends StatefulWidget {
 }
 
 class _SettingAndPlayerState extends State<SettingAndPlayer> {
-  ThemeControllData theme = videoPlayerControll.getTheme();
+  ThemeControllData theme = videoPlayerControll.theme;
   Offset position = Offset.zero;
   GlobalKey gKey = GlobalKey();
   Timer? timerCall;

@@ -65,3 +65,5 @@ class ThemeControllData {
     this.transitionDuration = const Duration(milliseconds: 500),
   });
 }
+
+typedef getToken = Function(int token);

@@ -11,6 +11,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../video_player_controll.dart';
 import 'languaje.dart';
 import 'player.dart';
+import 'player_fullscreen.dart';
 
 class DataPlayer {
   Duration currentPlay, totalPlay, bufferPlay;
@@ -287,11 +288,11 @@ class ManagerController {
         .open(Media(_format[token]!.format[index].urlVideo), play: false);
 
     sub = _controll[token]!.player.stream.duration.listen(
-      (e) {
+      (e) async {
         if (Duration.zero != e) {
-          _controll[token]?.player.seek(goCurrent);
+          await _controll[token]?.player.seek(goCurrent);
           if (_format[token]!.format[index].urlAudio != '') {
-            _controll[token]?.player.setAudioTrack(
+            await _controll[token]?.player.setAudioTrack(
                 AudioTrack.uri(_format[token]!.format[index].urlAudio));
           }
           if (play) {

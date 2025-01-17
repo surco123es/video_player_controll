@@ -1,79 +1,36 @@
 import 'package:flutter/widgets.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:video_player_controll/video_player_controll.dart';
-import 'player.dart';
 
-typedef getToken = Function(int token);
+import 'interface.dart';
+import 'model.dart';
 
 class PlayerControll {
-  bool _init = false;
+  bool initController = false;
   SettingMedia setting = SettingMedia();
-  ThemeControllData _theme = ThemeControllData();
-  Widget play({
+  ThemeControllData theme = ThemeControllData();
+  goSetting({
     SettingMedia? config,
-    ThemeControllData? theme,
-    getToken? funcStart,
-    Size size = Size.zero,
-    required FormatMedia media,
-    int token = 0,
-    bool forcePlay = false,
+    ThemeControllData? themeSkin,
   }) {
-    if (!_init) {
-      return const Text(
-          'Lo sentimos no inicializo el reproductor coloque al dentro de la funcion main(){ videoPlayerControll.init();...}');
-    }
     if (config != null) {
       setting = config;
     }
-    if (setting.multiPlayer) {
-      token = managerPlayer.token();
+    if (themeSkin != null) {
+      theme = themeSkin;
     }
-    if (theme != null) {
-      _setTheme(theme: theme);
-    }
-    if (funcStart != null) {
-      funcStart(token);
-    }
-    if (managerPlayer.checkController(token: token)) {
-      if (!managerPlayer.getPlayer(token: token).playing && forcePlay) {
-        pFunc.open(format: media, token: token);
-      }
-    } else {
-      managerPlayer.setMedia(v: media, token: token);
-      managerPlayer.setController(token: token);
-    }
-
-    if (size == Size.zero) {
-      size = const Size(720, 350);
-    }
-    return SizedBox(
-      width: size.width,
-      height: size.height,
-      child: PlayerControlMain(
-        token: token,
-      ),
-    );
-  }
-
-  ThemeControllData getTheme() {
-    return _theme;
-  }
-
-  _setTheme({required ThemeControllData theme}) {
-    _theme = theme;
   }
 
   init() async {
     try {
-      if (_init) {
-        return _init;
+      if (initController) {
+        return initController;
       }
       WidgetsFlutterBinding.ensureInitialized();
       MediaKit.ensureInitialized();
-      _init = !_init;
+      initController = !initController;
     } catch (e) {
       print(e);
     }
-    return _init;
+    return initController;
   }
 }
