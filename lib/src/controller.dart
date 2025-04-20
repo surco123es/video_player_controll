@@ -214,12 +214,6 @@ class ManagerController {
     fullScreen = true;
     try {
       streamPlayer.sink.add(DataPlaying(token: token, fullScreen: true));
-      _fullscreenOverlay = OverlayEntry(
-        builder: (context) => Material(
-          child: FullScreenWidget(token: token),
-        ),
-      );
-      Overlay.of(context, rootOverlay: true).insert(_fullscreenOverlay!);
       if (Platform.isAndroid || Platform.isIOS) {
         await Future.wait([
           SystemChrome.setEnabledSystemUIMode(
@@ -237,6 +231,12 @@ class ManagerController {
         );
       }
 
+      _fullscreenOverlay = OverlayEntry(
+        builder: (context) => Material(
+          child: FullScreenWidget(token: token),
+        ),
+      );
+      Overlay.of(context, rootOverlay: true).insert(_fullscreenOverlay!);
       WakelockPlus.enable();
     } catch (e) {
       print(e);

@@ -515,7 +515,6 @@ class _VolumeButton extends State<VolumeButton>
                   mute = false;
                 } else {
                   _volume = volume;
-                  if (widget.token != 0) {}
                   await managerPlayer
                       .getController(token: widget.token)
                       .player
@@ -532,11 +531,12 @@ class _VolumeButton extends State<VolumeButton>
               hoverColor: Colors.transparent,
               icon: AnimatedSwitcher(
                 duration: theme.transitionDuration,
-                child: volume == 0.0
+                child: volume <= 1
                     ? (widget.volumeMuteIcon ??
                         const Icon(
                           Icons.volume_off,
                           key: ValueKey(Icons.volume_off),
+                          color: Colors.red,
                         ))
                     : volume < 50.0
                         ? (widget.volumeLowIcon ??
